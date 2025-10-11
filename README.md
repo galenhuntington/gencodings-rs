@@ -5,6 +5,6 @@ general platform for encoding/decoding as well as an implementation
 of each of those.
 
 It can be invoked as `genc` with an option specifying the encoding,
-or if invoked as `g32, `g60`, or `g86`, it will use the corresponding
+or if invoked as `g32`, `g60`, or `g86`, it will use the corresponding
 encoding.
 
