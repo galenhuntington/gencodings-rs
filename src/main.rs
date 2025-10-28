@@ -63,7 +63,7 @@ fn per_enc<T: Encoding>(O { width, decode }: O) {
             &mut std::io::stdin(),
             &mut WrapWidth::new(stdout, width),
             ).unwrap();
-        stdout.write(b"\n").unwrap();
+        stdout.write_all(b"\n").unwrap();
         stdout.flush().unwrap();
     }
 }
@@ -73,12 +73,12 @@ fn dispatch_enc<T: Encoding>() {
 }
 
 fn dispatch_all() {
-    match C::parse() {
-        C { encoding, rest } => {
-            if encoding.g32 { per_enc::<G32>(rest); }
-            else if encoding.g60 { per_enc::<G60>(rest); }
-            else if encoding.g86 { per_enc::<G86>(rest); }
-        }
+    let C { encoding, rest } = C::parse();
+    match () {
+        _ if encoding.g32 => per_enc::<G32>(rest),
+        _ if encoding.g60 => per_enc::<G60>(rest),
+        _ if encoding.g86 => per_enc::<G86>(rest),
+        _ => panic!(),
     }
 }
 

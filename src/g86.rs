@@ -22,7 +22,7 @@ impl Encoding for G86 {
             if i < el { e[i] = Self::chr((v % 86) as usize) }
             v /= 86;
         }
-        return el;
+        el
     }
 
     fn decode_chunk_raw(e: &[u8], d: &mut [u8]) -> usize {

@@ -31,7 +31,7 @@ impl Encoding for G60 {
             if i < el { e[i] = Self::chr((v % s) as usize) }
             v /= s;
         }
-        return el;
+        el
     }
 
     fn decode_chunk_raw(e: &[u8], d: &mut [u8]) -> usize {
@@ -50,7 +50,7 @@ impl Encoding for G60 {
         w(5, (v % CO_4) / CO_5);
         w(6, (v % CO_5) / CO_6);
         w(7, v % CO_6);
-        return dl;
+        dl
     }
 }
 

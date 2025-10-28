@@ -84,15 +84,15 @@ macro_rules! stock_tests {
     ($e:ty) => {
         #[test]
         fn test_encode_decode() {
-            crate::test::test_encode_decode::<$e>(2000);
+            $crate::test::test_encode_decode::<$e>(2000);
         }
         #[test]
         fn test_slice_lengths() {
-            crate::test::test_slice_lengths::<$e>();
+            $crate::test::test_slice_lengths::<$e>();
         }
         #[test]
         fn test_filters() {
-            crate::test::test_filters::<$e>();
+            $crate::test::test_filters::<$e>();
         }
     };
 }

@@ -28,7 +28,7 @@ impl Encoding for G32 {
         if dl == 4 { e[6] = Self::chr(x); return 7; }
         e[6] = Self::chr(x | (d[4] >> 5));
         e[7] = Self::chr(d[4] & 0x1f);
-        return 8;
+        8
     }
 
     fn decode_chunk_raw(e: &[u8], d: &mut [u8]) -> usize {
@@ -47,7 +47,7 @@ impl Encoding for G32 {
         d[3] = e4 << 7 | Self::bits(e[5]) << 2 | e6 >> 3;
         if el == 7 { return 4; }
         d[4] = e6 << 5 | Self::bits(e[7]);
-        return 5;
+        5
     }
 }
 

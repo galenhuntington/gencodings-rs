@@ -61,7 +61,7 @@ pub trait Encoding {
             let ct = r.read(&mut ibuf)?;
             if ct == 0 { break; }
             let out = Self::encode_chunk_raw(&ibuf[..ct], &mut obuf);
-            w.write(&obuf[..out])?;
+            w.write_all(&obuf[..out])?;
             len += ct;
         }
         Ok(len)
@@ -75,7 +75,7 @@ pub trait Encoding {
             let ct = r.read(&mut ibuf)?;
             if ct == 0 { break; }
             let out = Self::decode_chunk_raw(&ibuf[..ct], &mut obuf);
-            w.write(&obuf[..out])?;
+            w.write_all(&obuf[..out])?;
             len += ct;
         }
         Ok(len)
