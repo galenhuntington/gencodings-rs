@@ -3,6 +3,7 @@ pub mod g32;
 pub mod g60;
 pub mod g86;
 pub mod wrap;
+#[cfg(test)]
 pub mod test;
 
 use std::io::{stdout,Write};
