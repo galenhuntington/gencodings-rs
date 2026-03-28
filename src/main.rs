@@ -6,10 +6,10 @@ pub mod wrap;
 #[cfg(test)]
 pub mod test;
 
-use std::io::{stdout,Write};
+use std::io::{stdout,Write,copy};
 use std::path::PathBuf;
 
-use base::Encoding;
+use base::{Encoding,DecMode};
 use wrap::WrapWidth;
 use g32::G32;
 use g60::G60;
@@ -51,18 +51,16 @@ pub struct O {
 fn per_enc<T: Encoding>(O { width, decode }: O) {
     let mut stdout = &stdout();
     if decode {
-        if let Err(e) =
-            T::decode_valid(
-                &mut std::io::stdin(),
-                &mut stdout,
-                base::FilterType::Whitespace,
+        if let Err(e) = copy(
+                    &mut std::io::stdin(),
+                    &mut T::new_decoder(&mut stdout, DecMode::Whitespace),
                 ) {
             eprintln!("Error: {}", e);
         }
     } else {
-        T::encode(
+        copy(
             &mut std::io::stdin(),
-            &mut WrapWidth::new(stdout, width),
+            &mut T::new_encoder(&mut WrapWidth::new(stdout, width)),
             ).unwrap();
         stdout.write_all(b"\n").unwrap();
         stdout.flush().unwrap();
