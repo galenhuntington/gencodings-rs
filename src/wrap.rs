@@ -18,7 +18,7 @@ impl<W: Write> Write for WrapWidth<W> {
         let mut ix = 0;
         while ix < buf.len() {
             if self.width > 0 && self.cur >= self.width {
-                self.base.write(b"\n")?;
+                self.base.write_all(b"\n")?;
                 self.cur = 0;
             }
             let left = buf.len() - ix;
@@ -27,7 +27,7 @@ impl<W: Write> Write for WrapWidth<W> {
                 else { left };
             let start = ix;
             ix += writing;
-            self.base.write(&buf[start .. ix])?;
+            self.base.write_all(&buf[start .. ix])?;
             self.cur += writing;
         }
         Ok(buf.len())

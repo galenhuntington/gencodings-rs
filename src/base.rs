@@ -97,13 +97,13 @@ pub enum FilterType {
 
 pub struct EncodedFilter<R: Read, E: Encoding> {
     base: R,
-    encoding: PhantomData<E>,
+    _encoding: PhantomData<E>,
     ftype: FilterType,
 }
 
 impl<R: Read, E: Encoding> EncodedFilter<R, E> {
     pub fn new(base: R, ftype: FilterType) -> Self {
-        EncodedFilter { base, encoding: PhantomData, ftype }
+        EncodedFilter { base, _encoding: PhantomData, ftype }
     }
 }
 
