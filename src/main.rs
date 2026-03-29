@@ -1,20 +1,10 @@
-pub mod base;
-pub mod g32;
-pub mod g60;
-pub mod g86;
-pub mod wrap;
-#[cfg(test)]
-pub mod test;
-
 use std::io::{stdout,Write,copy};
 use std::path::PathBuf;
-
-use base::{Encoding,DecMode};
-use wrap::WrapWidth;
-use g32::G32;
-use g60::G60;
-use g86::G86;
 use clap::{Parser,Args};
+
+use gencodings::base::{Encoding,DecMode};
+use gencodings::wrap::WrapWidth;
+use gencodings::{g32::G32,g60::G60,g86::G86};
 
 #[derive(Debug,Parser)]
 struct C {
@@ -49,7 +39,7 @@ pub struct O {
 }
 
 fn per_enc<T: Encoding>(O { width, decode }: O) {
-    let mut stdout = &stdout();
+    let mut stdout = stdout();
     if decode {
         if let Err(e) = copy(
                     &mut std::io::stdin(),
@@ -60,7 +50,7 @@ fn per_enc<T: Encoding>(O { width, decode }: O) {
     } else {
         copy(
             &mut std::io::stdin(),
-            &mut T::new_encoder(&mut WrapWidth::new(stdout, width)),
+            &mut T::new_encoder(&mut WrapWidth::new(&mut stdout, width)),
             ).unwrap();
         stdout.write_all(b"\n").unwrap();
         stdout.flush().unwrap();
@@ -77,7 +67,7 @@ fn dispatch_all() {
         _ if encoding.g32 => per_enc::<G32>(rest),
         _ if encoding.g60 => per_enc::<G60>(rest),
         _ if encoding.g86 => per_enc::<G86>(rest),
-        _ => panic!(),
+        _ => unreachable!("Clap"),
     }
 }
 

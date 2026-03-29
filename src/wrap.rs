@@ -2,8 +2,8 @@ use std::io::{Result,Write};
 use std::cmp::min;
 
 pub struct WrapWidth<W> {
-    pub inner: W,
-    pub width: usize,
+    inner: W,
+    width: usize,
     cur: usize,
 }
 
@@ -12,6 +12,7 @@ impl<W> WrapWidth<W> {
         WrapWidth { inner, width, cur: 0 }
     }
     pub fn into_inner(self) -> W { self.inner }
+    pub fn width(&self) -> usize { self.width }
 }
 
 impl<W: Write> Write for WrapWidth<W> {

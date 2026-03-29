@@ -26,7 +26,7 @@ fn write_num<W: Write>(w: &mut W, hold: u64, cnt: u8) -> io::Result<()> {
 impl Encoding for G86 {
     const CHUNK_SIZE: usize = 4;
     const ENC_CHUNK_SIZE: usize = 5;
-    const ALPHABET: &'static [u8]
+    const ALPHABET: &[u8]
         = b"!#$%()*+-./0123456789:=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\
             []^_`abcdefghijklmnopqrstuvwxyz{|}~";
     type EncState = G86EState;

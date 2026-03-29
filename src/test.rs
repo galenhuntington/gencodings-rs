@@ -3,7 +3,6 @@ use std::io::{Write,ErrorKind};
 use rand::distr::Distribution;
 
 use crate::base::*;
-// use std::io::ErrorKind;
 
 pub struct Bytes;
 
@@ -58,7 +57,7 @@ pub fn test_max_partial_enc<E: Encoding>(num: usize) {
             let _ = co.write(&d);
             e.len()
         };
-        d.append(&mut vec!(0x00; 60));
+        d.append(&mut vec![0x00; 60]);
         let e1 = E::encode_slice(&d);
         let e1 = e1.as_bytes();
         d.truncate(len);
@@ -85,7 +84,7 @@ pub fn test_max_partial_dec<E: Encoding>(num: usize) {
         let e_mid = e_mid.as_bytes();
         d.truncate(len);
         // Decrement
-        for i in (d2.len()..0).rev() {
+        for i in (0..d2.len()).rev() {
             if d2[i] > 0x00 { d2[i] -= 1; break }
             d2[i] = 0xff;
         }
@@ -94,7 +93,7 @@ pub fn test_max_partial_dec<E: Encoding>(num: usize) {
         let e_lo = e_lo.as_bytes();
         // Increment
         let mut d2 = d.clone();
-        for i in (d2.len()..0).rev() {
+        for i in (0..d2.len()).rev() {
             if d2[i] < 0xff { d2[i] += 1; break }
             d2[i] = 0x00;
         }

@@ -79,11 +79,11 @@ pub trait Encoding: Sized {
     #[inline]
     fn bits<T: Into<usize>>(i: T) -> u8 { Self::REV_ALPHABET[i.into()] }
 
-    #[inline(always)]
+    #[inline]
     fn encoded_size(size: usize) -> usize {
         usize::div_ceil(size * Self::ENC_CHUNK_SIZE, Self::CHUNK_SIZE)
     }
-    #[inline(always)]
+    #[inline]
     fn decoded_size(size: usize) -> usize {
         (size * Self::CHUNK_SIZE) / Self::ENC_CHUNK_SIZE
     }
@@ -126,8 +126,7 @@ pub trait Encoding: Sized {
         let mut co = Self::new_encoder(v);
         for b in d { co.write_one(*b).unwrap() }
         let e = co.into_inner();
-        unsafe { String::from_utf8_unchecked(e) }
-        // "test".to_string()
+        String::from_utf8(e).unwrap()
     }
 
     fn decode_str(e: &str) -> Vec<u8> {
@@ -148,14 +147,15 @@ impl<E: Encoding, D: Dir, W: Write> Coder<E, D, W> {
     }
     pub fn into_inner(mut self) -> W {
         let _ = self.finish();
-        unsafe { std::ptr::read(&std::mem::ManuallyDrop::new(self).inner) }
+        let me = std::mem::ManuallyDrop::new(self);
+        unsafe { std::ptr::read(&me.inner) }
     }
     #[inline]
     pub fn write_one(&mut self, b: u8) -> io::Result<()> {
         D::code_u8::<E, W>(self, b)
     }
     #[inline]
-    pub fn finish(&mut self) -> io::Result<()> {
+    fn finish(&mut self) -> io::Result<()> {
         D::finish::<E, W>(self)
     }
 }
