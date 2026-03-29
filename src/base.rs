@@ -137,6 +137,9 @@ pub trait Encoding: Sized {
     }
 }
 
+#[macro_export]
+macro_rules! chrs { ($($e:expr),*) => { &[$(Self::chr($e)),*][..] }; }
+
 impl<E: Encoding, D: Dir, W: Write> Coder<E, D, W> {
     fn new(inner: W, mode: D::Mode) -> Self {
         Coder {

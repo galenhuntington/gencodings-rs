@@ -1,6 +1,7 @@
 /* Crockford base-32 encoding */
 
 use crate::base::*;
+use crate::chrs;
 
 pub struct G32;
 
@@ -27,25 +28,25 @@ impl Encoding for G32 {
 
     fn encode_u8<W: Write>(co: &mut Encoder<G32, W>, b: u8) -> io::Result<()> {
         let cnt = co.state.cnt;
-        let c1 = G32::chr(co.state.bits | b >> (cnt + 3));
+        let c1 = co.state.bits | b >> (cnt + 3);
         if cnt < 2 {
             co.state = G32State {
                 cnt: cnt + 3,
                 bits: (b << (2 - cnt)) & 0x1f,
             };
-            co.inner.write_all(&[c1])
+            co.inner.write_all(chrs!(c1))
         } else {
             co.state = G32State {
                 cnt: cnt - 2, 
                 bits: (b << (7 - cnt)) & 0x1f,
             };
-            co.inner.write_all(&[c1, G32::chr((b >> (cnt - 2)) & 0x1f)])
+            co.inner.write_all(chrs!(c1, (b >> (cnt - 2)) & 0x1f))
         }
     }
 
     fn finish_encode<W: Write>(co: &mut Encoder<G32, W>) -> io::Result<()> {
         if co.state.cnt != 0 {
-            co.inner.write_all(&[G32::chr(co.state.bits)])
+            co.inner.write_all(chrs!(co.state.bits))
         } else {
             Ok(())
         }

@@ -1,6 +1,7 @@
 /* G60 encoding */
 
 use crate::base::*;
+use crate::chrs;
 
 pub struct G60;
 
@@ -9,8 +10,6 @@ const R_COEFFS: [u16; 11] = [0, 14, 3, 0, 40, 9, 2, 0, 24, 5, 1];
 
 #[derive(PartialEq,Eq,Default,Debug)]
 pub struct G60State { rem: u16, cnt: u8 }
-
-macro_rules! chrs { ($($e:expr),*) => { &[$(Self::chr($e)),*][..] }; }
 
 impl Encoding for G60 {
     const CHUNK_SIZE: usize = 8;
