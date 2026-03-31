@@ -77,7 +77,8 @@ pub fn test_max_partial_dec<E: Encoding>(num: usize) {
     for _ in 0..num {
         let mut d: Vec<u8> = Bytes.sample(&mut rng);
         let len = d.len();
-        if len == 0 || d[0] == 0x00 || d[0] == 0xff { continue }
+        if len == 0 || d[0] == 0x00 || d[0] == 0xff
+            || !E::partial_dec_filter(&d) { continue }
         let mut d2 = d.clone();
         d.append(&mut Bytes.sample(&mut rng));
         d.append(&mut vec!(0x7f; 60));

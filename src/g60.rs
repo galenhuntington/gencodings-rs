@@ -69,6 +69,12 @@ impl Encoding for G60 {
         }
     }
 
+    #[cfg(test)]
+    fn partial_dec_filter(buf: &[u8]) -> bool {
+        buf.iter().enumerate().all(
+            |(i, &b)| b!=0xff || { let m = i%8; m!=2 && m!=5 })
+    }
+
 }
 
 #[cfg(test)]
@@ -99,7 +105,6 @@ mod tests {
     }
 
     crate::stock_tests!(G60);
-    // Third or sixth byte being 0xff fails partial dec because of gaps.
-    // crate::max_partial_tests!(G60, false, true);
+    crate::max_partial_tests!(G60, false, true);
 }
 

@@ -121,6 +121,10 @@ pub trait Encoding: Sized {
         Coder::new(w, m)
     }
 
+    #[cfg(test)]
+    // Filter out edge cases where max partial dec fails.
+    fn partial_dec_filter(_buf: &[u8]) -> bool { true }
+
     fn encode_slice(d: &[u8]) -> String {
         let v = Vec::with_capacity(Self::encoded_size(d.len()));
         let mut co = Self::new_encoder(v);
