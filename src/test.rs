@@ -1,6 +1,7 @@
 use rand::Rng;
 use std::io::{Write,ErrorKind};
 use rand::distr::Distribution;
+use rand::RngExt;
 
 use crate::base::*;
 
