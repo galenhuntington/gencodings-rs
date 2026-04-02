@@ -1,55 +1,75 @@
 /* Crockford base-32 encoding */
 
-use crate::base::Encoding;
+use crate::base::*;
+use crate::chrs;
 
 pub struct G32;
+
+#[derive(PartialEq,Eq,Default,Debug)]
+pub struct G32State { cnt: u8, bits: u8 }
+
+const UPPER_ARR: [(u8, u8); 22] = {
+    let mut v = [(0, 0); 22];
+    let mut i = 10;
+    while i < 32 {
+        v[i - 10] = (G32::ALPHABET[i] - 32, i as u8);
+        i += 1;
+    }
+    v
+};
 
 impl Encoding for G32 {
     const CHUNK_SIZE: usize = 5;
     const ENC_CHUNK_SIZE: usize = 8;
-    const ALPHABET: &'static [u8] = b"0123456789abcdefghjkmnpqrstvwxyz";
+    const ALPHABET: &[u8] = b"0123456789abcdefghjkmnpqrstvwxyz";
+    const REV_EXTRAS: &[(u8, u8)] = &UPPER_ARR;
+    type EncState = G32State;
+    type DecState = G32State;
 
-    fn encode_chunk_raw(d: &[u8], e: &mut [u8]) -> usize {
-        let dl = d.len();
-        if dl == 0 { return 0; }
-        e[0] = Self::chr(d[0] >> 3);
-        let x = (d[0] & 0x07) << 2;
-        if dl == 1 { e[1] = Self::chr(x); return 2; }
-        e[1] = Self::chr(x | (d[1] >> 6));
-        e[2] = Self::chr((d[1] & 0x3f) >> 1);
-        let x = (d[1] & 0x01) << 4;
-        if dl == 2 { e[3] = Self::chr(x); return 4; }
-        e[3] = Self::chr(x | (d[2] >> 4));
-        let x = (d[2] & 0x0f) << 1;
-        if dl == 3 { e[4] = Self::chr(x); return 5; }
-        e[4] = Self::chr(x | (d[3] >> 7));
-        e[5] = Self::chr((d[3] & 0x7f) >> 2);
-        let x = (d[3] & 0x03) << 3;
-        if dl == 4 { e[6] = Self::chr(x); return 7; }
-        e[6] = Self::chr(x | (d[4] >> 5));
-        e[7] = Self::chr(d[4] & 0x1f);
-        8
+    fn encode_u8<W: Write>(co: &mut Encoder<G32, W>, b: u8) -> io::Result<()> {
+        let cnt = co.state.cnt;
+        let c1 = co.state.bits | b >> (cnt + 3);
+        if cnt < 2 {
+            co.state = G32State {
+                cnt: cnt + 3,
+                bits: (b << (2 - cnt)) & 0x1f,
+            };
+            co.inner.write_all(chrs!(c1))
+        } else {
+            co.state = G32State {
+                cnt: cnt - 2, 
+                bits: (b << (7 - cnt)) & 0x1f,
+            };
+            co.inner.write_all(chrs!(c1, (b >> (cnt - 2)) & 0x1f))
+        }
     }
 
-    fn decode_chunk_raw(e: &[u8], d: &mut [u8]) -> usize {
-        let el = e.len();
-        if el <= 1 { return 0; }
-        let e1 = Self::bits(e[1]);
-        d[0] = Self::bits(e[0]) << 3 | e1 >> 2;
-        if el <= 3 { return 1; }
-        let e3 = Self::bits(e[3]);
-        d[1] = e1 << 6 | Self::bits(e[2]) << 1 | e3 >> 4;
-        if el == 4 { return 2; }
-        let e4 = Self::bits(e[4]);
-        d[2] = e3 << 4 | e4 >> 1;
-        if el <= 6 { return 3; }
-        let e6 = Self::bits(e[6]);
-        d[3] = e4 << 7 | Self::bits(e[5]) << 2 | e6 >> 3;
-        if el == 7 { return 4; }
-        d[4] = e6 << 5 | Self::bits(e[7]);
-        5
+    fn finish_encode<W: Write>(co: &mut Encoder<G32, W>) -> io::Result<()> {
+        if co.state.cnt != 0 {
+            co.inner.write_all(chrs!(co.state.bits))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn decode_u8<W: Write>(co: &mut Decoder<G32, W>, b: u8) -> io::Result<()> {
+        let G32State { cnt, bits } = co.state;
+        if cnt < 3 {
+            co.state = G32State {
+                cnt: cnt + 5,
+                bits: bits | b << (3 - cnt),
+            };
+            Ok(())
+        } else {
+            co.state = G32State {
+                cnt: cnt - 3,
+                bits: if cnt == 3 { 0 } else { b << (11 - cnt) },
+            };
+            co.inner.write_all(&[bits | b >> (cnt - 3)])
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -78,8 +98,11 @@ mod tests {
     #[test]
     fn test_hello() {
         assert_eq!(G32::encode_slice(b"Hello"), "91jprv3f");
+        assert_eq!(G32::decode_str("91jprv3f"), b"Hello");
+        assert_eq!(G32::decode_str("91JPRV3F"), b"Hello"); // Upper case
     }
 
     crate::stock_tests!(G32);
+    crate::max_partial_tests!(G32, true, true);
 }
 
