@@ -1,12 +1,14 @@
 /* Crockford base-32 encoding */
 
 use crate::base::*;
-use crate::chrs;
 
 pub struct G32;
 
 #[derive(PartialEq,Eq,Default,Debug)]
 pub struct G32State { cnt: u8, bits: u8 }
+
+#[derive(PartialEq,Copy,Clone,Eq,Default,Debug)]
+pub enum Case { #[default] Lower, Upper }
 
 const UPPER_ARR: [(u8, u8); 22] = {
     let mut v = [(0, 0); 22];
@@ -18,13 +20,32 @@ const UPPER_ARR: [(u8, u8); 22] = {
     v
 };
 
+const ALPHABET_LC: &[u8] = b"0123456789abcdefghjkmnpqrstvwxyz";
+const ALPHABET_UC: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+macro_rules! chrs {
+    ($co:expr; $($e:expr),*) => {&{
+        let al = get_alphabet($co.params);
+        [$(al[$e as usize]),*]
+    }[..]};
+}
+
+#[inline]
+pub fn get_alphabet(case: Case) -> &'static [u8] {
+    match case {
+        Case::Lower => G32::ALPHABET,
+        Case::Upper => ALPHABET_UC,
+    }
+}
+
 impl Encoding for G32 {
     const CHUNK_SIZE: usize = 5;
     const ENC_CHUNK_SIZE: usize = 8;
-    const ALPHABET: &[u8] = b"0123456789abcdefghjkmnpqrstvwxyz";
+    const ALPHABET: &[u8] = ALPHABET_LC;
     const REV_EXTRAS: &[(u8, u8)] = &UPPER_ARR;
     type EncState = G32State;
     type DecState = G32State;
+    type EncParams = Case;
 
     fn encode_u8<W: Write>(co: &mut Encoder<G32, W>, b: u8) -> io::Result<()> {
         let cnt = co.state.cnt;
@@ -34,19 +55,19 @@ impl Encoding for G32 {
                 cnt: cnt + 3,
                 bits: (b << (2 - cnt)) & 0x1f,
             };
-            co.inner.write_all(chrs!(c1))
+            co.inner.write_all(chrs!(co; c1))
         } else {
             co.state = G32State {
                 cnt: cnt - 2, 
                 bits: (b << (7 - cnt)) & 0x1f,
             };
-            co.inner.write_all(chrs!(c1, (b >> (cnt - 2)) & 0x1f))
+            co.inner.write_all(chrs!(co; c1, (b >> (cnt - 2)) & 0x1f))
         }
     }
 
     fn finish_encode<W: Write>(co: &mut Encoder<G32, W>) -> io::Result<()> {
         if co.state.cnt != 0 {
-            co.inner.write_all(chrs!(co.state.bits))
+            co.inner.write_all(chrs!(co; co.state.bits))
         } else {
             Ok(())
         }
@@ -99,7 +120,8 @@ mod tests {
     fn test_hello() {
         assert_eq!(G32::encode_slice(b"Hello"), "91jprv3f");
         assert_eq!(G32::decode_str("91jprv3f"), b"Hello");
-        assert_eq!(G32::decode_str("91JPRV3F"), b"Hello"); // Upper case
+        assert_eq!(G32::encode_slice_with(b"Hello", Case::Upper), "91JPRV3F");
+        assert_eq!(G32::decode_str("91JPRV3F"), b"Hello");
     }
 
     crate::stock_tests!(G32);

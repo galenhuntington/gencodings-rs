@@ -18,6 +18,7 @@ impl Encoding for G60 {
         = b"0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     type EncState = G60State;
     type DecState = G60State;
+    type EncParams = ();
 
     fn encode_u8<W: Write>(co: &mut Encoder<G60, W>, b: u8) -> io::Result<()> {
         let cnt = co.state.cnt;

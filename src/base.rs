@@ -5,8 +5,9 @@ use std::marker::PhantomData;
 
 pub struct Coder<E: Encoding, D: Dir, W: Write> {
     pub inner: W,
-    pub state: D::State<E>,
     pub mode: D::Mode,
+    pub params: D::Params<E>,
+    pub state: D::State<E>,
     pub _marker: PhantomData<(E, D)>,
 }
 pub type Encoder<E, W> = Coder<E, Enc, W>;
@@ -16,6 +17,7 @@ mod sealed { pub trait Sealed {} }
 pub trait Dir: sealed::Sealed + Sized {
     type Mode: Default;
     type State<E: Encoding>: Default;
+    type Params<E: Encoding>: Default;
     fn code_u8<E: Encoding, W: Write>(_: &mut Coder<E, Self, W>, _: u8) -> io::Result<()>;
     fn finish<E: Encoding, W: Write>(_: &mut Coder<E, Self, W>) -> io::Result<()>;
 }
@@ -24,6 +26,7 @@ pub struct Enc;
 impl sealed::Sealed for Enc {}
 impl Dir for Enc {
     type State<E: Encoding> = E::EncState;
+    type Params<E: Encoding> = E::EncParams;
     type Mode = ();
     #[inline]
     fn code_u8<E: Encoding, W: Write>(co: &mut Encoder<E, W>, b: u8) -> io::Result<()> {
@@ -39,6 +42,7 @@ pub struct Dec;
 impl sealed::Sealed for Dec {}
 impl Dir for Dec {
     type State<E: Encoding> = E::DecState;
+    type Params<E: Encoding> = ();
     type Mode = DecMode;
     #[inline]
     fn code_u8<E: Encoding, W: Write>(co: &mut Decoder<E, W>, b: u8) -> io::Result<()> {
@@ -54,6 +58,8 @@ impl Dir for Dec {
 pub trait Encoding: Sized {
     type EncState: Default;
     type DecState: Default;
+    // XXX It'll be nice when associated type defaults are available.
+    type EncParams: Default;
     const CHUNK_SIZE: usize;
     const ENC_CHUNK_SIZE: usize;
     const ALPHABET: &[u8];
@@ -111,6 +117,10 @@ pub trait Encoding: Sized {
     // fn has_leftover<W: Write>(_: &Decoder<Self, W>) -> bool { false }
 
     #[inline]
+    fn new_encoder_with<W: Write>(w: W, p: Self::EncParams) -> Encoder<Self, W> {
+        Coder::new_with(w, (), p)
+    }
+    #[inline]
     fn new_encoder<W: Write>(w: W) -> Encoder<Self, W> { Coder::new(w, ()) }
     #[inline]
     fn new_decoder_default<W: Write>(w: W) -> Decoder<Self, W> {
@@ -125,12 +135,17 @@ pub trait Encoding: Sized {
     // Filter out edge cases where max partial dec fails.
     fn partial_dec_filter(_buf: &[u8]) -> bool { true }
 
-    fn encode_slice(d: &[u8]) -> String {
+    fn encode_slice_with(d: &[u8], p: Self::EncParams) -> String {
         let v = Vec::with_capacity(Self::encoded_size(d.len()));
-        let mut co = Self::new_encoder(v);
+        let mut co = Self::new_encoder_with(v, p);
         for b in d { co.write_one(*b).unwrap() }
         let e = co.into_inner();
         String::from_utf8(e).unwrap()
+    }
+
+    #[inline]
+    fn encode_slice(d: &[u8]) -> String {
+        Self::encode_slice_with(d, Default::default())
     }
 
     fn decode_str(e: &str) -> Vec<u8> {
@@ -146,8 +161,11 @@ macro_rules! chrs { ($($e:expr),*) => { &[$(Self::chr($e)),*][..] }; }
 
 impl<E: Encoding, D: Dir, W: Write> Coder<E, D, W> {
     fn new(inner: W, mode: D::Mode) -> Self {
+        Self::new_with(inner, mode, Default::default())
+    }
+    fn new_with(inner: W, mode: D::Mode, params: D::Params<E>) -> Self {
         Coder {
-            inner, mode,
+            inner, mode, params,
             state: Default::default(),
             _marker: Default::default(),
         }
