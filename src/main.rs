@@ -29,6 +29,7 @@ pub struct EncodingOpts {
 }
 
 #[derive(Debug,Parser)]
+#[clap(version)]
 pub struct O {
     #[clap(long, short)]
     /// Decode
