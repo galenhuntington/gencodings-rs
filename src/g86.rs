@@ -31,6 +31,7 @@ impl Encoding for G86 {
             []^_`abcdefghijklmnopqrstuvwxyz{|}~";
     type EncState = G86EState;
     type DecState = G86DState;
+    type EncParams = ();
 
     fn encode_u8<W: Write>(co: &mut Encoder<G86, W>, b: u8) -> io::Result<()> {
         let cnt = co.state.cnt;
